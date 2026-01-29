@@ -1,0 +1,30 @@
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+
+
+
+/* Blog content fixes */
+.blog-View .prose * {
+  background: transparent !important;
+}
+
+.blog-View .prose h2,
+.blog-View .prose h3,
+.blog-View .prose h4 {
+  background: transparent !important;
+}
+
+.blog-View .prose ul,
+.blog-View .prose ol,
+.blog-View .prose li {
+  background: transparent !important;
+  padding-left: 0;
+}
+
+.blog-View .prose blockquote {
+  background: transparent !important;
+}
