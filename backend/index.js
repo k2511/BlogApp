@@ -1,75 +1,81 @@
 import express from "express";
 import "dotenv/config";
-import connectionDB from "./database/db.js";
-import router from "./routes/userRoute.js";
-import blogrouter from "./routes/blogRoute.js";
-import commentRoute from "./routes/commentRoute.js";
-const app = express();
+import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-// ✅ __dirname ठीक से बनाएं
+// Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const app = express();
+const PORT = process.env.PORT || 8000;
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const PORT = process.env.PORT || 3000;
-
 app.use(cookieParser());
 
-// ✅ CORS ठीक करें
+// CORS configuration
 app.use(cors({
-  origin: ["http://localhost:5173", "https://blogapp-tebg.onrender.com"],
+  origin: ["http://localhost:5173", "https://blogapp-yourname.onrender.com"],
   credentials: true
 }));
 
-// ✅ Frontend path ठीक से सेट करें
+// MongoDB Connection
+const connectionDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/blogapp");
+    console.log("✅ MongoDB Connected Successfully");
+  } catch (error) {
+    console.error("❌ MongoDB Connection Failed:", error.message);
+  }
+};
+
+// Frontend path
 const frontendPath = path.join(__dirname, '..', 'fronted', 'dist');
 
-// ✅ DEBUG: Check if folder exists
-console.log("Frontend path:", frontendPath);
-console.log("Folder exists:", fs.existsSync(frontendPath));
+// Check if frontend build exists
+if (fs.existsSync(frontendPath)) {
+  console.log("✅ Serving frontend from:", frontendPath);
+  
+  // Serve static files
+  app.use(express.static(frontendPath));
+  
+  // ✅ FIX: Use regex instead of "*" for Express 5
+  // This handles all non-file, non-API routes
+  app.get(/\/(?!api|assets).*/, (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+} else {
+  console.log("⚠️ Frontend build not found at:", frontendPath);
+}
 
-// ✅ IMPORTANT: Express को बताएं कि static files कहाँ हैं
-app.use(express.static(frontendPath));
+// ========== YOUR API ROUTES ==========
+// Import your routes
+import router from "./routes/userRoute.js";
+import blogrouter from "./routes/blogRoute.js";
+import commentRoute from "./routes/commentRoute.js";
 
-// API routes
+// Mount API routes
 app.use("/api/v1/user", router);
 app.use("/api/v1/blog", blogrouter);
 app.use("/api/v1/comment", commentRoute);
 
-// ✅ Health check
+// Test endpoint
+app.get("/api/test", (req, res) => {
+  res.json({ message: "API is working!", timestamp: new Date().toISOString() });
+});
+
+// Health check
 app.get("/health", (req, res) => {
-  res.json({ status: "OK", message: "Server is running" });
+  res.json({ status: "healthy", service: "Blog App" });
 });
 
-// ✅ IMPORTANT FIX: File extension check करने वाला middleware
-app.use((req, res, next) => {
-  const url = req.url;
-  
-  // अगर URL में .css, .js, .png etc है तो उसे static file की तरह handle करो
-  if (url.includes('.css') || url.includes('.js') || url.includes('.png') || 
-      url.includes('.jpg') || url.includes('.svg') || url.includes('.woff') ||
-      url.includes('.ttf') || url.includes('.ico')) {
-    
-    // Express static middleware को handle करने दो
-    return next();
-  }
-  
-  // अगर API route है
-  if (url.startsWith('/api/')) {
-    return next();
-  }
-  
-  // वरना index.html भेजो
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
-
-app.listen(PORT, () => {
-  connectionDB();
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  await connectionDB();
 });
