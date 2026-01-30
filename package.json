@@ -1,17 +1,19 @@
 {
-  "name": "backend",
+  "name": "blog-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MERN Blog Application",
+  "main": "backend/index.js",
+  "type": "module",
   "scripts": {
-       "dev": "nodemon backend/index.js",
     "start": "node backend/index.js",
-    "build": "npm install && npm install --prefix fronted && npm run build --prefix fronted"
+    "dev": "nodemon backend/index.js",
+    "build": "cd fronted && npm install && npm run build",
+    "render-build": "cd backend && npm install && cd ../fronted && npm install && npm run build",
+    "install-all": "cd backend && npm install && cd ../fronted && npm install"
   },
-  "keywords": [],
+  "keywords": ["blog", "mern", "react", "nodejs"],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.9.0",
